@@ -36,15 +36,15 @@ class GenericRawIdWidget(forms.TextInput):
         if attrs is None:
             attrs = {}
         attrs['class'] = 'vGenericRawIdField' # The JS looks for this class name.
-        output_str = u'&nbsp;&nbsp;%s<a href="#" id="lookup_id_%s" class="related-lookup" onclick="return showGenericRelatedObjectLookupPopup(this);">&nbsp;<img src="%simg/admin/selector-search.gif" alt="Lookup" height="16" width="16" /></a>'
+        output_str = u'&nbsp;&nbsp;%s<a href="#" id="lookup_id_%s" class="related-lookup" onclick="return showGenericRelatedObjectLookupPopup(this);">&nbsp;<img src="%sadmin/img/selector-search.gif" alt="Lookup" height="16" width="16" /></a>'
         return mark_safe(output_str % (super(GenericRawIdWidget, self).render(name, value, attrs),
                                        name,
-                                       settings.ADMIN_MEDIA_PREFIX))
+                                       settings.STATIC_URL))
 
     class Media:
         js = [
-            '%sjs/getElementsBySelector.js' % settings.ADMIN_MEDIA_PREFIX,
-            '%s%sgenericglue/show_generic_relations.js' % (settings.STATIC_MEDIA_URL, getattr(settings, "APP_MEDIA_PREFIX", "app_media/")),
+            'admin/js/getElementsBySelector.js',
+            'genericglue/show_generic_relations.js',
         ]
 
 
