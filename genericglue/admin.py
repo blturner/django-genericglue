@@ -1,12 +1,16 @@
 from django import forms
 from django.contrib.contenttypes.models import ContentType
-from django.db.models.loading import cache
 from genericglue.forms import GenericForeignKeyField
 from genericglue.utils import table_exists
 
+try:
+    from django.db.models.loading import cache as apps
+except ImportError:
+    from django.apps import apps
+
 
 if table_exists(ContentType._meta.db_table):
-    MODELS_WITH_PERMALINKS = [ContentType.objects.get_for_model(model) for model in cache.get_models() if getattr(model, 'get_absolute_url', None)]
+    MODELS_WITH_PERMALINKS = [ContentType.objects.get_for_model(model) for model in apps.get_models() if getattr(model, 'get_absolute_url', None)]
     MODEL_IDS_WITH_PERMALINKS = [ct.id for ct in MODELS_WITH_PERMALINKS]
 else:
     MODELS_WITH_PERMALINKS = []
