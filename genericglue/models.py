@@ -1,6 +1,10 @@
-from django.contrib.contenttypes import generic
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
+
+try:
+    from django.contrib.contenttypes import generic as fields
+except ImportError:
+    from django.contrib.contenttypes import fields
 
 
 class SingleGFK(models.Model):
@@ -10,7 +14,7 @@ class SingleGFK(models.Model):
     """
     object_type = models.ForeignKey(ContentType, related_name="related_%(class)s")
     object_id = models.IntegerField(db_index=True)
-    object = generic.GenericForeignKey(ct_field="object_type", fk_field="object_id")
+    object = fields.GenericForeignKey(ct_field="object_type", fk_field="object_id")
 
     class Meta:
         abstract = True
@@ -26,7 +30,7 @@ class DualGfk(SingleGFK):
     """
     parent_type = models.ForeignKey(ContentType, related_name="child_%(class)s")
     parent_id = models.IntegerField(db_index=True)
-    parent = generic.GenericForeignKey(ct_field="parent_type", fk_field="parent_id")
+    parent = fields.GenericForeignKey(ct_field="parent_type", fk_field="parent_id")
     dnorm_parent = models.CharField(max_length=200)
 
     class Meta:
@@ -37,7 +41,7 @@ class DualGfk(SingleGFK):
         self.save_base(**kwargs)
 
 
-class GenericglueRelation(generic.GenericRelation):
+class GenericglueRelation(fields.GenericRelation):
     """
     A simple override of Django's GenericRelation class to assume the default field names DualGfk uses.
     
