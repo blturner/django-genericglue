@@ -36,6 +36,8 @@ class GenericRawIdWidget(forms.TextInput):
     necessary object-selection popup.
 
     """
+    template_name = 'genericglue/generic_raw_id.html'
+
     def render(self, name, value, attrs=None):
         if attrs is None:
             attrs = {}
@@ -45,9 +47,15 @@ class GenericRawIdWidget(forms.TextInput):
                                        name,
                                        settings.STATIC_URL))
 
+    def get_context(self, name, value, attrs):
+        context = super(GenericRawIdWidget, self).get_context(name, value, attrs)
+        context['widget']['attrs'].setdefault('class', 'vGenericRawIdField')
+        print(context)
+        return context
+
     class Media:
         js = [
-            'admin/js/getElementsBySelector.js',
+            'genericglue/getElementsBySelector.js',
             'genericglue/show_generic_relations.js',
         ]
 
@@ -87,7 +95,7 @@ class GenericForeignKeyWidget(forms.MultiWidget):
         """
         if isinstance(value, (list, tuple)) and (value[0] and value[1]):
             value = ContentType.objects.get(pk=value[0]).get_object_for_this_type(pk=value[1])
-            return u"&nbsp;<strong>%s</strong>" % unicode(value)
+            return "&nbsp;<strong>%s</strong>" % value
         return None
 
 
