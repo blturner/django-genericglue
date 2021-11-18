@@ -50,7 +50,6 @@ class GenericRawIdWidget(forms.TextInput):
     def get_context(self, name, value, attrs):
         context = super(GenericRawIdWidget, self).get_context(name, value, attrs)
         context['widget']['attrs'].setdefault('class', 'vGenericRawIdField')
-        print(context)
         return context
 
     class Media:
