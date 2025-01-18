@@ -9,18 +9,23 @@ except ImportError:
 
 class SingleGFK(models.Model):
     """
-    An abstract base model to simplify the creation of models with a GFK'd 
+    An abstract base model to simplify the creation of models with a GFK'd
     "object" relationship.
     """
-    object_type = models.ForeignKey(ContentType, related_name="related_%(class)s")
+
+    object_type = models.ForeignKey(
+        ContentType, related_name="related_%(class)s", on_delete=models.CASCADE
+    )
     object_id = models.IntegerField(db_index=True)
-    object = fields.GenericForeignKey(ct_field="object_type", fk_field="object_id")
+    object = fields.GenericForeignKey(
+        ct_field="object_type", fk_field="object_id"
+    )
 
     class Meta:
         abstract = True
 
     def __unicode__(self):
-        return u"%s - %s" % (self.object_type, self.object)
+        return "%s - %s" % (self.object_type, self.object)
 
 
 class DualGfk(SingleGFK):
@@ -28,9 +33,14 @@ class DualGfk(SingleGFK):
     An abstract base model to simplify the creation of models with dual-ended
     GFKs.
     """
-    parent_type = models.ForeignKey(ContentType, related_name="child_%(class)s")
+
+    parent_type = models.ForeignKey(
+        ContentType, related_name="child_%(class)s", on_delete=models.CASCADE
+    )
     parent_id = models.IntegerField(db_index=True)
-    parent = fields.GenericForeignKey(ct_field="parent_type", fk_field="parent_id")
+    parent = fields.GenericForeignKey(
+        ct_field="parent_type", fk_field="parent_id"
+    )
     dnorm_parent = models.CharField(max_length=200)
 
     class Meta:
@@ -44,10 +54,12 @@ class DualGfk(SingleGFK):
 class GenericglueRelation(fields.GenericRelation):
     """
     A simple override of Django's GenericRelation class to assume the default field names DualGfk uses.
-    
+
     """
+
     def __init__(self, model, **kwargs):
-        defaults = dict(object_id_field="parent_id", content_type_field="parent_type")
+        defaults = dict(
+            object_id_field="parent_id", content_type_field="parent_type"
+        )
         defaults.update(kwargs)
         return super(GenericglueRelation, self).__init__(model, **defaults)
-    
