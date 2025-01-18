@@ -10,6 +10,7 @@ try:
 except ImportError:
     from django.contrib.contenttypes import admin
 
+
 class ContentTypeChoiceIterator(object):
     """
     A class which generates choices for content-type select fields
@@ -20,12 +21,16 @@ class ContentTypeChoiceIterator(object):
     ContentTypes.
 
     """
+
     def __init__(self, queryset=ContentType.objects.all()):
         self.queryset = queryset
-        self.ctype_choices = [(ctype.id, "%s | %s" % (ctype.app_label, ctype.model)) for ctype in self.queryset.order_by('app_label', 'model')]
+        self.ctype_choices = [
+            (ctype.id, "%s | %s" % (ctype.app_label, ctype.model))
+            for ctype in self.queryset.order_by("app_label", "model")
+        ]
 
     def __iter__(self):
-        yield (u"", u"---------") # initial empty choice
+        yield ("", "---------")  # initial empty choice
         for choice in self.ctype_choices:
             yield choice
 
@@ -36,26 +41,36 @@ class GenericRawIdWidget(forms.TextInput):
     necessary object-selection popup.
 
     """
-    template_name = 'genericglue/generic_raw_id.html'
+
+    template_name = "genericglue/generic_raw_id.html"
 
     def render(self, name, value, attrs=None):
         if attrs is None:
             attrs = {}
-        attrs['class'] = 'vGenericRawIdField' # The JS looks for this class name.
-        output_str = u'&nbsp;&nbsp;%s<a href="#" id="lookup_id_%s" class="related-lookup" onclick="return showGenericRelatedObjectLookupPopup(this);">&nbsp;<img src="%sadmin/img/selector-search.gif" alt="Lookup" height="16" width="16" /></a>'
-        return mark_safe(output_str % (super(GenericRawIdWidget, self).render(name, value, attrs),
-                                       name,
-                                       settings.STATIC_URL))
+        attrs[
+            "class"
+        ] = "vGenericRawIdField"  # The JS looks for this class name.
+        output_str = '&nbsp;&nbsp;%s<a href="#" id="lookup_id_%s" class="related-lookup" onclick="return showGenericRelatedObjectLookupPopup(this);">&nbsp;<img src="%sadmin/img/selector-search.gif" alt="Lookup" height="16" width="16" /></a>'
+        return mark_safe(
+            output_str
+            % (
+                super(GenericRawIdWidget, self).render(name, value, attrs),
+                name,
+                settings.STATIC_URL,
+            )
+        )
 
     def get_context(self, name, value, attrs):
-        context = super(GenericRawIdWidget, self).get_context(name, value, attrs)
-        context['widget']['attrs'].setdefault('class', 'vGenericRawIdField')
+        context = super(GenericRawIdWidget, self).get_context(
+            name, value, attrs
+        )
+        context["widget"]["attrs"].setdefault("class", "vGenericRawIdField")
         return context
 
     class Media:
         js = [
-            'genericglue/getElementsBySelector.js',
-            'genericglue/show_generic_relations.js',
+            "genericglue/getElementsBySelector.js",
+            "genericglue/show_generic_relations.js",
         ]
 
 
@@ -64,17 +79,30 @@ class GenericForeignKeyWidget(forms.MultiWidget):
     A combined widget for object-type and object-id selection in a generic FK.
 
     """
-    def __init__(self, attrs=None, queryset=ContentType.objects.all()):
-        super(GenericForeignKeyWidget, self).__init__(widgets=(forms.Select(choices=ContentTypeChoiceIterator(queryset=queryset)),
-                                                               GenericRawIdWidget))
 
-    def render(self, name, value, attrs=None):
-        output = super(GenericForeignKeyWidget, self).render(name, value, attrs)
+    def __init__(self, attrs=None, queryset=ContentType.objects.all()):
+        super(GenericForeignKeyWidget, self).__init__(
+            widgets=(
+                forms.Select(
+                    choices=ContentTypeChoiceIterator(queryset=queryset)
+                ),
+                GenericRawIdWidget,
+            )
+        )
+
+    def render(self, name, value, attrs=None, renderer=None):
+        output = super(GenericForeignKeyWidget, self).render(
+            name, value, attrs
+        )
         obj_repr = self.get_repr(value)
-        return obj_repr and mark_safe("%s %s"% (output, self.get_repr(value))) or mark_safe(output)
+        return (
+            obj_repr
+            and mark_safe("%s %s" % (output, self.get_repr(value)))
+            or mark_safe(output)
+        )
 
     def value_from_datadict(self, data, files, name):
-        return [data.get("%s_0" % name, ''), data.get("%s_1" % name, '')]
+        return [data.get("%s_0" % name, ""), data.get("%s_1" % name, "")]
 
     def decompress(self, value):
         """
@@ -93,7 +121,9 @@ class GenericForeignKeyWidget(forms.MultiWidget):
 
         """
         if isinstance(value, (list, tuple)) and (value[0] and value[1]):
-            value = ContentType.objects.get(pk=value[0]).get_object_for_this_type(pk=value[1])
+            value = ContentType.objects.get(
+                pk=value[0]
+            ).get_object_for_this_type(pk=value[1])
             return "&nbsp;<strong>%s</strong>" % value
         return None
 
@@ -105,9 +135,17 @@ class GenericForeignKeyField(forms.MultiValueField):
     represented by that combination.
 
     """
+
     def __init__(self, queryset=ContentType.objects.all(), *args, **kwargs):
-        super(GenericForeignKeyField, self).__init__(fields=(forms.ModelChoiceField(queryset=queryset),
-                                                             forms.IntegerField()), widget=GenericForeignKeyWidget(queryset=queryset), *args, **kwargs)
+        super(GenericForeignKeyField, self).__init__(
+            fields=(
+                forms.ModelChoiceField(queryset=queryset),
+                forms.IntegerField(),
+            ),
+            widget=GenericForeignKeyWidget(queryset=queryset),
+            *args,
+            **kwargs
+        )
 
     def compress(self, data_list):
         """
@@ -115,7 +153,12 @@ class GenericForeignKeyField(forms.MultiValueField):
         object.
 
         """
-        if data_list is None or data_list == [] or not data_list[0] or not data_list[1]:
+        if (
+            data_list is None
+            or data_list == []
+            or not data_list[0]
+            or not data_list[1]
+        ):
             return data_list
         ctype, object_id = data_list
         try:
@@ -127,7 +170,7 @@ class GenericForeignKeyField(forms.MultiValueField):
             # duplicating a large amount of code, and clean() ends up
             # calling this method anyway.
             #
-            raise forms.ValidationError(u"Please select a valid object")
+            raise forms.ValidationError("Please select a valid object")
         return (ctype, object_id)
 
 
@@ -137,8 +180,8 @@ class GenericglueInlineModelAdmin(admin.GenericInlineModelAdmin):
 
 
 class GenericglueStackedInline(GenericglueInlineModelAdmin):
-    template = 'admin/edit_inline/stacked.html'
+    template = "admin/edit_inline/stacked.html"
 
 
 class GenericglueTabularInline(GenericglueInlineModelAdmin):
-    template = 'admin/edit_inline/tabular.html'
+    template = "admin/edit_inline/tabular.html"
